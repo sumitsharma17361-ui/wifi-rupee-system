@@ -31,7 +31,8 @@
         <!-- Payment Section -->
         <div id="paymentSection">
             <div class="qr-box">
-                <img id="upiQr" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=YOUR_UPI_ID%26pn=CollegeWiFi%26am=1%26cu=INR" alt="UPI QR Code">
+                <!-- Exact PhonePe QR Code Generator for Sumit Sharma -->
+                <img id="upiQr" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=9528669044@ybl%26pn=Sumit%20Sharma%26am=1%26cu=INR" alt="PhonePe UPI QR Code">
                 <p><small>Scan via Google Pay / PhonePe / Paytm</small></p>
             </div>
 
@@ -50,13 +51,13 @@
             <button class="btn btn-blue" id="connectBtn" onclick="activateInternet()">Unlock Wi-Fi Connection</button>
         </div>
 
-        <!-- Hotspot QR & Details Box (Unlocks on click) -->
+        <!-- Hotspot QR & Details Box -->
         <div id="wifiDetailsBox">
             <h3 style="color: #155724; margin: 0 0 10px 0;">Wi-Fi Access Granted! 🎉</h3>
             <p style="font-size: 13px; color: #155724; margin: 0;">Scan below QR code to connect directly:</p>
             
             <div class="qr-box" style="background: white;">
-                <!-- Pro Sniper Mobile Hotspot QR Code -->
+                <!-- Pro Sniper Mobile Hotspot Connect QR Code -->
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=WIFI:S:Pro%20Sniper%20Mobile;T:WPA;P:NUMBER123;;" alt="Hotspot QR Code">
             </div>
 
