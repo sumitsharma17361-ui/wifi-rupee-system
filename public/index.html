@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>₹1 Wi-Fi Access</title>
+    <title>College Wi-Fi Access</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f9; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .qr-box { margin: 20px 0; }
-        .btn { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #f0f2f5; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; max-width: 380px; margin: auto; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .qr-box { margin: 20px 0; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
+        .qr-box img { width: 180px; height: 180px; border-radius: 8px; }
+        .btn { background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; }
+        .btn:disabled { background: #ccc; }
+        #tokenDisplay { font-size: 20px; font-weight: bold; color: #007bff; margin-top: 20px; word-break: break-all; }
+        .status { font-size: 14px; color: #666; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -17,19 +21,50 @@
         <p>Pay <b>₹1</b> to get high-speed internet for 15 minutes.</p>
         
         <div class="qr-box">
-            <!-- Yahan aapka UPI QR Code image aayega -->
-            <img src="https://via.placeholder.com/150" alt="UPI QR Code">
-            <p><small>Scan via Google Pay / PhonePay / Paytm</small></p>
+            <!-- Yahan apni UPI ID daalein (Replace YOUR_UPI_ID) -->
+            <img id="upiQr" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=YOUR_UPI_ID%26pn=CollegeWiFi%26am=1%26cu=INR" alt="UPI QR Code">
+            <p><small>Scan via Google Pay / PhonePe / Paytm</small></p>
         </div>
 
-        <button class="btn" onclick="checkPayment()">I have paid, Get Token</button>
-        <h3 id="tokenDisplay" style="color: blue; margin-top: 20px;"></h3>
+        <button class="btn" id="payBtn" onclick="verifyPayment()">I Have Paid, Get Token</button>
+        
+        <div id="status" class="status"></div>
+        <div id="tokenDisplay"></div>
     </div>
 
     <script>
-        function checkPayment() {
-            alert("Payment verification logic yahan integrate hoga!");
-            document.getElementById("tokenDisplay").innerText = "Token: WIFI-PASS-1234";
+        async function verifyPayment() {
+            const btn = document.getElementById('payBtn');
+            const status = document.getElementById('status');
+            const tokenDisplay = document.getElementById('tokenDisplay');
+
+            btn.disabled = true;
+            status.innerText = "Verifying payment with server...";
+
+            try {
+                // Render backend API Call
+                const response = await fetch('/api/webhook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: 1, timestamp: new Date() })
+                });
+
+                const data = await response.json();
+
+                if(data.status === "success") {
+                    status.style.color = "green";
+                    status.innerText = "Payment Verified Successfully!";
+                    tokenDisplay.innerText = "Token: " + data.token;
+                } else {
+                    status.style.color = "red";
+                    status.innerText = "Payment not detected yet. Try again.";
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                status.style.color = "red";
+                status.innerText = "Server error. Please try again.";
+                btn.disabled = false;
+            }
         }
     </script>
 </body>
