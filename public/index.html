@@ -13,9 +13,12 @@
         .input-group label { font-size: 13px; font-weight: bold; color: #333; display: block; margin-bottom: 5px; }
         .input-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
         .btn { background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; }
+        .btn-blue { background: #007bff; }
         .btn:disabled { background: #ccc; }
-        #tokenDisplay { font-size: 20px; font-weight: bold; color: #007bff; margin-top: 15px; word-break: break-all; }
+        #tokenDisplay { font-size: 22px; font-weight: bold; color: #007bff; margin: 15px 0; }
         .status { font-size: 14px; color: #666; margin-top: 10px; }
+        .timer { font-size: 26px; font-weight: bold; color: #28a745; margin-top: 15px; }
+        #connectSection { display: none; margin-top: 20px; border-top: 2px dashed #eee; padding-top: 15px; }
     </style>
 </head>
 <body>
@@ -23,53 +26,67 @@
         <h2>College Wi-Fi Access</h2>
         <p>Pay <b>₹1</b> to get high-speed internet for 15 minutes.</p>
         
-        <div class="qr-box">
-            <img id="upiQr" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=9528669044@ybl%26pn=CollegeWiFi%26am=1%26cu=INR" alt="UPI QR Code">
-            <p><small>Scan via Google Pay / PhonePe / Paytm</small></p>
+        <!-- Payment Section -->
+        <div id="paymentSection">
+            <div class="qr-box">
+                <img id="upiQr" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=YOUR_UPI_ID%26pn=CollegeWiFi%26am=1%26cu=INR" alt="UPI QR Code">
+                <p><small>Scan via Google Pay / PhonePe / Paytm</small></p>
+            </div>
+
+            <div class="input-group">
+                <label for="utrInput">Enter 12-Digit UTR / Transaction ID:</label>
+                <input type="number" id="utrInput" placeholder="e.g. 421589630124">
+            </div>
+
+            <button class="btn" id="payBtn" onclick="verifyPayment()">Verify Payment & Get Token</button>
         </div>
 
-        <div class="input-group">
-            <label for="utrInput">Enter 12-Digit UTR / Transaction ID:</label>
-            <input type="number" id="utrInput" placeholder="e.g. 421589630124" maxlength="12">
+        <!-- Connection Section (Auto Unlocks after payment) -->
+        <div id="connectSection">
+            <p style="color: green; font-weight: bold;">Token Generated Successfully!</p>
+            <div id="tokenDisplay"></div>
+            <button class="btn btn-blue" id="connectBtn" onclick="activateInternet()">Connect Internet Now</button>
         </div>
 
-        <button class="btn" id="payBtn" onclick="verifyPayment()">Verify Payment & Get Token</button>
-        
         <div id="status" class="status"></div>
-        <div id="tokenDisplay"></div>
+        <div id="timerDisplay" class="timer"></div>
     </div>
 
     <script>
+        let generatedToken = "";
+
         async function verifyPayment() {
             const utr = document.getElementById('utrInput').value.trim();
             const btn = document.getElementById('payBtn');
             const status = document.getElementById('status');
-            const tokenDisplay = document.getElementById('tokenDisplay');
 
             if (!utr || utr.length !== 12) {
                 status.style.color = "red";
-                status.innerText = "Please enter a valid 12-digit UTR number.";
+                status.innerText = "Please enter a valid 12-digit UTR.";
                 return;
             }
 
             btn.disabled = true;
             status.style.color = "#666";
             status.innerText = "Verifying UTR with server...";
-            tokenDisplay.innerText = "";
 
             try {
                 const response = await fetch('/api/verify-utr', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ utr: utr, amount: 1 })
+                    body: JSON.stringify({ utr: utr })
                 });
 
                 const data = await response.json();
 
                 if (response.ok && data.status === "success") {
                     status.style.color = "green";
-                    status.innerText = "Payment Verified Successfully!";
-                    tokenDisplay.innerText = "Token: " + data.token;
+                    status.innerText = "Payment Verified!";
+                    generatedToken = data.token;
+                    
+                    document.getElementById('tokenDisplay').innerText = generatedToken;
+                    document.getElementById('paymentSection').style.display = "none";
+                    document.getElementById('connectSection').style.display = "block";
                 } else {
                     status.style.color = "red";
                     status.innerText = data.message || "Verification failed.";
@@ -80,6 +97,58 @@
                 status.innerText = "Server error. Please try again.";
                 btn.disabled = false;
             }
+        }
+
+        async function activateInternet() {
+            const status = document.getElementById('status');
+            const btn = document.getElementById('connectBtn');
+
+            btn.disabled = true;
+            status.style.color = "#666";
+            status.innerText = "Activating internet access...";
+
+            try {
+                const response = await fetch('/api/check-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: generatedToken })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.valid) {
+                    status.style.color = "green";
+                    status.innerText = "Access Granted! Wi-Fi Active.";
+                    document.getElementById('connectBtn').style.display = "none";
+                    startTimer(data.timeRemainingSeconds);
+                } else {
+                    status.style.color = "red";
+                    status.innerText = data.message || "Invalid Token!";
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                status.style.color = "red";
+                status.innerText = "Server error. Please try again.";
+                btn.disabled = false;
+            }
+        }
+
+        function startTimer(seconds) {
+            let timer = seconds;
+            const timerDisplay = document.getElementById('timerDisplay');
+
+            const interval = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                const secs = timer % 60;
+
+                timerDisplay.innerText = `${minutes}:${secs < 10 ? '0' : ''}${secs} Left`;
+
+                if (--timer < 0) {
+                    clearInterval(interval);
+                    timerDisplay.style.color = "red";
+                    timerDisplay.innerText = "15 Mins Over! Internet Disconnected.";
+                }
+            }, 1000);
         }
     </script>
 </body>
