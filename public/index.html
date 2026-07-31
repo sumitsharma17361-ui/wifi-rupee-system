@@ -15,10 +15,12 @@
         .btn { background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; }
         .btn-blue { background: #007bff; }
         .btn:disabled { background: #ccc; }
-        #tokenDisplay { font-size: 22px; font-weight: bold; color: #007bff; margin: 15px 0; }
+        #tokenDisplay { font-size: 22px; font-weight: bold; color: #007bff; margin: 10px 0; }
         .status { font-size: 14px; color: #666; margin-top: 10px; }
         .timer { font-size: 26px; font-weight: bold; color: #28a745; margin-top: 15px; }
-        #connectSection { display: none; margin-top: 20px; border-top: 2px dashed #eee; padding-top: 15px; }
+        #connectSection { display: none; margin-top: 15px; border-top: 2px dashed #eee; padding-top: 15px; }
+        #wifiDetailsBox { display: none; margin-top: 15px; background: #eef9f1; padding: 15px; border-radius: 8px; border: 1px solid #c3e6cb; }
+        .wifi-info { font-size: 14px; text-align: left; margin: 10px 0; background: #fff; padding: 10px; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -38,14 +40,30 @@
                 <input type="number" id="utrInput" placeholder="e.g. 421589630124">
             </div>
 
-            <button class="btn" id="payBtn" onclick="verifyPayment()">Verify Payment & Get Token</button>
+            <button class="btn" id="payBtn" onclick="verifyPayment()">Verify Payment & Get Access</button>
         </div>
 
-        <!-- Connection Section (Auto Unlocks after payment) -->
+        <!-- Connection Section -->
         <div id="connectSection">
-            <p style="color: green; font-weight: bold;">Token Generated Successfully!</p>
+            <p style="color: green; font-weight: bold; margin-bottom: 5px;">Payment Verified!</p>
             <div id="tokenDisplay"></div>
-            <button class="btn btn-blue" id="connectBtn" onclick="activateInternet()">Connect Internet Now</button>
+            <button class="btn btn-blue" id="connectBtn" onclick="activateInternet()">Unlock Wi-Fi Connection</button>
+        </div>
+
+        <!-- Hotspot QR & Details Box (Unlocks on click) -->
+        <div id="wifiDetailsBox">
+            <h3 style="color: #155724; margin: 0 0 10px 0;">Wi-Fi Access Granted! 🎉</h3>
+            <p style="font-size: 13px; color: #155724; margin: 0;">Scan below QR code to connect directly:</p>
+            
+            <div class="qr-box" style="background: white;">
+                <!-- Pro Sniper Mobile Hotspot QR Code -->
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=WIFI:S:Pro%20Sniper%20Mobile;T:WPA;P:NUMBER123;;" alt="Hotspot QR Code">
+            </div>
+
+            <div class="wifi-info">
+                <p style="margin: 4px 0;"><b>Network Name (SSID):</b> Pro Sniper Mobile</p>
+                <p style="margin: 4px 0;"><b>Password:</b> NUMBER123</p>
+            </div>
         </div>
 
         <div id="status" class="status"></div>
@@ -80,11 +98,10 @@
                 const data = await response.json();
 
                 if (response.ok && data.status === "success") {
-                    status.style.color = "green";
-                    status.innerText = "Payment Verified!";
+                    status.innerText = "";
                     generatedToken = data.token;
                     
-                    document.getElementById('tokenDisplay').innerText = generatedToken;
+                    document.getElementById('tokenDisplay').innerText = "Token: " + generatedToken;
                     document.getElementById('paymentSection').style.display = "none";
                     document.getElementById('connectSection').style.display = "block";
                 } else {
@@ -105,7 +122,7 @@
 
             btn.disabled = true;
             status.style.color = "#666";
-            status.innerText = "Activating internet access...";
+            status.innerText = "Activating session...";
 
             try {
                 const response = await fetch('/api/check-token', {
@@ -117,9 +134,10 @@
                 const data = await response.json();
 
                 if (response.ok && data.valid) {
-                    status.style.color = "green";
-                    status.innerText = "Access Granted! Wi-Fi Active.";
-                    document.getElementById('connectBtn').style.display = "none";
+                    status.innerText = "";
+                    document.getElementById('connectSection').style.display = "none";
+                    document.getElementById('wifiDetailsBox').style.display = "block";
+                    
                     startTimer(data.timeRemainingSeconds);
                 } else {
                     status.style.color = "red";
@@ -146,7 +164,8 @@
                 if (--timer < 0) {
                     clearInterval(interval);
                     timerDisplay.style.color = "red";
-                    timerDisplay.innerText = "15 Mins Over! Internet Disconnected.";
+                    timerDisplay.innerText = "15 Mins Over! Access Expired.";
+                    document.getElementById('wifiDetailsBox').style.display = "none";
                 }
             }, 1000);
         }
