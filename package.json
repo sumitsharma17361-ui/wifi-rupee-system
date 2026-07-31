@@ -1,0 +1,12 @@
+{
+  "name": "wifi-rupee-system",
+  "version": "1.0.0",
+  "description": "₹1 Wi-Fi Pay-per-use system",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
