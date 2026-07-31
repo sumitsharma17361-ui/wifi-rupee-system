@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wi-Fi Access Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #eef2f5; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; max-width: 380px; margin: auto; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .input-group { margin: 20px 0; text-align: left; }
+        .input-group label { font-size: 13px; font-weight: bold; color: #333; display: block; margin-bottom: 5px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; text-transform: uppercase; }
+        .btn { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; }
+        .timer { font-size: 24px; font-weight: bold; color: #28a745; margin-top: 15px; }
+        .status { font-size: 14px; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Connect to College Wi-Fi</h2>
+        <p>Enter your 15-Minute Access Token below:</p>
+
+        <div class="input-group">
+            <label for="tokenInput">Enter Token (e.g. WIFI-AB12CD):</label>
+            <input type="text" id="tokenInput" placeholder="WIFI-XXXXXX">
+        </div>
+
+        <button class="btn" id="connectBtn" onclick="activateInternet()">Connect Internet</button>
+        
+        <div id="status" class="status"></div>
+        <div id="timerDisplay" class="timer"></div>
+    </div>
+
+    <script>
+        let countdown;
+
+        async function activateInternet() {
+            const token = document.getElementById('tokenInput').value.trim().toUpperCase();
+            const status = document.getElementById('status');
+            const timerDisplay = document.getElementById('timerDisplay');
+            const btn = document.getElementById('connectBtn');
+
+            if (!token) {
+                status.style.color = "red";
+                status.innerText = "Please enter a valid token.";
+                return;
+            }
+
+            status.style.color = "#666";
+            status.innerText = "Verifying token with server...";
+
+            try {
+                const response = await fetch('/api/check-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.valid) {
+                    status.style.color = "green";
+                    status.innerText = "Access Granted! Internet Active.";
+                    btn.disabled = true;
+                    
+                    // 15 Minutes Timer Simulation
+                    startTimer(data.timeRemainingMinutes * 60);
+                } else {
+                    status.style.color = "red";
+                    status.innerText = data.message || "Invalid or Expired Token!";
+                }
+            } catch (err) {
+                status.style.color = "red";
+                status.innerText = "Server error. Try again.";
+            }
+        }
+
+        function startTimer(durationSeconds) {
+            let timer = durationSeconds;
+            const timerDisplay = document.getElementById('timerDisplay');
+
+            clearInterval(countdown);
+            countdown = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+
+                timerDisplay.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds} Left`;
+
+                if (--timer < 0) {
+                    clearInterval(countdown);
+                    timerDisplay.style.color = "red";
+                    timerDisplay.innerText = "Session Expired!";
+                    document.getElementById('status').innerText = "Please pay ₹1 again to get a new token.";
+                    document.getElementById('connectBtn').disabled = false;
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
