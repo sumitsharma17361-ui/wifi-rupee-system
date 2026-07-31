@@ -7,11 +7,14 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #f0f2f5; padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 12px; max-width: 380px; margin: auto; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-        .qr-box { margin: 20px 0; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
-        .qr-box img { width: 180px; height: 180px; border-radius: 8px; }
+        .qr-box { margin: 15px 0; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
+        .qr-box img { width: 170px; height: 170px; border-radius: 8px; }
+        .input-group { margin: 15px 0; text-align: left; }
+        .input-group label { font-size: 13px; font-weight: bold; color: #333; display: block; margin-bottom: 5px; }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
         .btn { background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; }
         .btn:disabled { background: #ccc; }
-        #tokenDisplay { font-size: 20px; font-weight: bold; color: #007bff; margin-top: 20px; word-break: break-all; }
+        #tokenDisplay { font-size: 20px; font-weight: bold; color: #007bff; margin-top: 15px; word-break: break-all; }
         .status { font-size: 14px; color: #666; margin-top: 10px; }
     </style>
 </head>
@@ -21,12 +24,16 @@
         <p>Pay <b>₹1</b> to get high-speed internet for 15 minutes.</p>
         
         <div class="qr-box">
-            <!-- Yahan apni UPI ID daalein (Replace YOUR_UPI_ID) -->
-            <img id="upiQr" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=9528669044@ybl%26pn=CollegeWiFi%26am=1%26cu=INR" alt="UPI QR Code">
+            <img id="upiQr" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=YOUR_UPI_ID%26pn=CollegeWiFi%26am=1%26cu=INR" alt="UPI QR Code">
             <p><small>Scan via Google Pay / PhonePe / Paytm</small></p>
         </div>
 
-        <button class="btn" id="payBtn" onclick="verifyPayment()">I Have Paid, Get Token</button>
+        <div class="input-group">
+            <label for="utrInput">Enter 12-Digit UTR / Transaction ID:</label>
+            <input type="number" id="utrInput" placeholder="e.g. 421589630124" maxlength="12">
+        </div>
+
+        <button class="btn" id="payBtn" onclick="verifyPayment()">Verify Payment & Get Token</button>
         
         <div id="status" class="status"></div>
         <div id="tokenDisplay"></div>
@@ -34,30 +41,38 @@
 
     <script>
         async function verifyPayment() {
+            const utr = document.getElementById('utrInput').value.trim();
             const btn = document.getElementById('payBtn');
             const status = document.getElementById('status');
             const tokenDisplay = document.getElementById('tokenDisplay');
 
+            if (!utr || utr.length !== 12) {
+                status.style.color = "red";
+                status.innerText = "Please enter a valid 12-digit UTR number.";
+                return;
+            }
+
             btn.disabled = true;
-            status.innerText = "Verifying payment with server...";
+            status.style.color = "#666";
+            status.innerText = "Verifying UTR with server...";
+            tokenDisplay.innerText = "";
 
             try {
-                // Render backend API Call
-                const response = await fetch('/api/webhook', {
+                const response = await fetch('/api/verify-utr', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: 1, timestamp: new Date() })
+                    body: JSON.stringify({ utr: utr, amount: 1 })
                 });
 
                 const data = await response.json();
 
-                if(data.status === "success") {
+                if (response.ok && data.status === "success") {
                     status.style.color = "green";
                     status.innerText = "Payment Verified Successfully!";
                     tokenDisplay.innerText = "Token: " + data.token;
                 } else {
                     status.style.color = "red";
-                    status.innerText = "Payment not detected yet. Try again.";
+                    status.innerText = data.message || "Verification failed.";
                     btn.disabled = false;
                 }
             } catch (err) {
