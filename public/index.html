@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>₹1 Wi-Fi Access</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f9; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .qr-box { margin: 20px 0; }
+        .btn { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>College Wi-Fi Access</h2>
+        <p>Pay <b>₹1</b> to get high-speed internet for 15 minutes.</p>
+        
+        <div class="qr-box">
+            <!-- Yahan aapka UPI QR Code image aayega -->
+            <img src="https://via.placeholder.com/150" alt="UPI QR Code">
+            <p><small>Scan via Google Pay / PhonePay / Paytm</small></p>
+        </div>
+
+        <button class="btn" onclick="checkPayment()">I have paid, Get Token</button>
+        <h3 id="tokenDisplay" style="color: blue; margin-top: 20px;"></h3>
+    </div>
+
+    <script>
+        function checkPayment() {
+            alert("Payment verification logic yahan integrate hoga!");
+            document.getElementById("tokenDisplay").innerText = "Token: WIFI-PASS-1234";
+        }
+    </script>
+</body>
+</html>
